@@ -1,15 +1,26 @@
+const http = require('http');
 const app = require('./src/app');
 const config = require('./src/config');
 const logger = require('./src/utils/logger');
+const connectDB = require('./src/config/database');
+const { initializeSocket } = require('./src/config/socket');
 
 let server;
 
-const startServer = () => {
-  server = app.listen(config.port, () => {
+const startServer = async () => {
+  await connectDB();
+
+  server = http.createServer(app);
+
+  // Initialize Socket.io
+  initializeSocket(server);
+
+  server.listen(config.port, () => {
     logger.info(`Server running in ${config.env} mode on port ${config.port}`);
     logger.info(`API Version: ${config.apiVersion}`);
     logger.info(`Health check: http://localhost:${config.port}/health`);
     logger.info(`API endpoint: http://localhost:${config.port}/api/${config.apiVersion}`);
+    logger.info(`WebSocket server initialized`);
   });
 };
 
@@ -36,9 +47,16 @@ process.on('uncaughtException', err => {
 
 process.on('unhandledRejection', err => {
   logger.error('UNHANDLED REJECTION! Shutting down...', err);
-  server.close(() => {
+  if (server) {
+    server.close(() => {
+      process.exit(1);
+    });
+  } else {
     process.exit(1);
-  });
+  }
 });
 
-startServer();
+startServer().catch(err => {
+  logger.error('Failed to start server:', err);
+  process.exit(1);
+});

@@ -18,7 +18,10 @@ const validate = validations => {
       message: err.msg,
     }));
 
-    throw ApiError.badRequest('Validation failed', extractedErrors);
+    const error = ApiError.badRequest('Validation failed');
+    error.errors = extractedErrors;
+
+    return next(error);
   };
 };
 

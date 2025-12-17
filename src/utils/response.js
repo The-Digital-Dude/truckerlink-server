@@ -27,4 +27,13 @@ class ApiResponse {
   }
 }
 
+const successResponse = (res, statusCode, message, data) => {
+  return res.status(statusCode).json({
+    success: true,
+    message,
+    data,
+  });
+};
+
 module.exports = ApiResponse;
+module.exports.successResponse = successResponse;
